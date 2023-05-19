@@ -2,13 +2,35 @@ spring:
   application:
     name: config-server
   profiles:
-      active: native
-
+      active:
+        - native
+#        - git
+#      - native, git #, vault
   cloud:
     config:
       server:
         native:
           search-locations: classpath:/config
+#        git:
+#          uri: https://github.com/dmswldi/msa-config.git
+#          basedir: target/config
+          # config 저장소에서 설정 파일을 탐색할 경로를 지정
+#          searchPaths: /licensingservice
+#        vault:
+#          port: 8200
+#          host: 127.0.0.1
+#          kvVersion: 2
+#          backend: licensing-service
+#          profile-separator: /
 
 server:
   port: 8071
+encrypt:
+  key: thisissecretkey
+
+#Enable all Spring Boot Actuator endpoints.
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: "*"

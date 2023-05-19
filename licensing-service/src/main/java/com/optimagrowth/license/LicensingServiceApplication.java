@@ -2,6 +2,7 @@ package com.optimagrowth.license;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.web.servlet.LocaleResolver;
@@ -13,6 +14,7 @@ import java.util.Locale;
 // 1. 내부적으로 애플리케이션 클래스를 configuration 클래스로 지정
 // 2. 자바 클래스 경로에 있는 모든 클래스를 자동으로 스캔
 @SpringBootApplication
+@RefreshScope// config 데이터 변경 시 서버 재실행 기능
 public class LicensingServiceApplication {
 
     public static void main(String[] args) {

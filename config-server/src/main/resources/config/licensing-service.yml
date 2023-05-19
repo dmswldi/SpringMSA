@@ -1,5 +1,5 @@
 spring:
   datasource:
-    url: jdbc:postgresql://database:5432/ostock_dev
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/postgres
+    username:
+    password:

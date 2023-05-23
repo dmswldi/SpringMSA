@@ -45,6 +45,29 @@ public class LicenseController {
         return ResponseEntity.ok(license);
     }
 
+    @RequestMapping(value = "/{licenseId}/{clientType}", method = RequestMethod.GET)
+    public ResponseEntity<License> getLicenseWithClient(
+            @PathVariable("organizationId") String organizationId,
+            @PathVariable("licenseId") String licenseId,
+            @PathVariable("clientType") String clientType){
+        License license = licenseService.getLicense(licenseId, organizationId, clientType);
+        license.add(linkTo(methodOn(LicenseController.class)
+                        .getLicense(organizationId, license.getLicenseId()))
+                        .withSelfRel(),
+                linkTo(methodOn(LicenseController.class)
+                        .createLicense(license))
+                        .withRel("createLicense"),
+                linkTo(methodOn(LicenseController.class)
+                        .updateLicense(license))
+                        .withRel("updateLicense"),
+                linkTo(methodOn(LicenseController.class)
+                        .deleteLicense(license.getLicenseId()))
+                        .withRel("deleteLicense")
+        );
+
+        return ResponseEntity.ok(license);
+    }
+
     @PutMapping
     public ResponseEntity<License> updateLicense(@RequestBody License request){// HTTP Request Body를 License 객체로 매핑
         return ResponseEntity.ok(licenseService.updateLicense(request));

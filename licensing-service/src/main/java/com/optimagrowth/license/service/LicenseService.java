@@ -7,10 +7,12 @@ import com.optimagrowth.license.repository.LicenseRepository;
 import com.optimagrowth.license.service.client.OrganizationDiscoveryClient;
 import com.optimagrowth.license.service.client.OrganizationFeignClient;
 import com.optimagrowth.license.service.client.OrganizationRestTemplateClient;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -101,6 +103,11 @@ public class LicenseService {
         licenseRepository.delete(license);
         responseMessage = String.format(messages.getMessage("license.delete.message", null, null), licenseId);
         return responseMessage;
+    }
+
+    @CircuitBreaker(name = "licenseService") // 원격 자원 호출을 회로 차단기로 래핑
+    public List<License> getLicensesByOrganization(String organizationId) {
+        return licenseRepository.findByOrganizationId(organizationId);
     }
 
 }

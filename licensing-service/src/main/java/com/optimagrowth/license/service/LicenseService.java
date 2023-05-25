@@ -7,11 +7,18 @@ import com.optimagrowth.license.repository.LicenseRepository;
 import com.optimagrowth.license.service.client.OrganizationDiscoveryClient;
 import com.optimagrowth.license.service.client.OrganizationFeignClient;
 import com.optimagrowth.license.service.client.OrganizationRestTemplateClient;
+import com.optimagrowth.license.util.UserContextHolder;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +42,7 @@ public class LicenseService {
     @Autowired
     OrganizationDiscoveryClient organizationDiscoveryClient;
 
-
+    private static final Logger logger = LoggerFactory.getLogger(LicenseService.class);
 
     public License getLicense(String licenseId, String organizationId){
         License license = licenseRepository.findByOrganizationIdAndLicenseId(organizationId, licenseId);
@@ -105,9 +112,26 @@ public class LicenseService {
         return responseMessage;
     }
 
-    @CircuitBreaker(name = "licenseService") // 원격 자원 호출을 회로 차단기로 래핑
+    // bulk head -> time limiter -> rate limiter -> circuit breaker -> retry
+    @Bulkhead(name = "bulkheadLicenseService", type= Bulkhead.Type.SEMAPHORE, fallbackMethod = "buildFallbackLicenseList")
+    @RateLimiter(name = "licenseService", fallbackMethod = "buildFallbackLicenseList")
+    @CircuitBreaker(name = "licenseService", fallbackMethod = "buildFallbackLicenseList") // 원격 자원 호출을 회로 차단기로 래핑
+    @Retry(name = "retryLicenseService", fallbackMethod = "buildFallbackLicenseList")
     public List<License> getLicensesByOrganization(String organizationId) {
+        logger.debug("getLicensesByOrganization Correlation id: {}",
+                UserContextHolder.getContext().getCorrelationId());
         return licenseRepository.findByOrganizationId(organizationId);
+    }
+
+    // fallback method
+    private List<License> buildFallbackLicenseList(String organizationId, Throwable t){
+        List<License> fallbackList = new ArrayList<>();
+        License license = new License();
+        license.setLicenseId("0000000-00-00000");
+        license.setOrganizationId(organizationId);
+        license.setProductName("Sorry no licensing information currently available");
+        fallbackList.add(license);
+        return fallbackList;
     }
 
 }
